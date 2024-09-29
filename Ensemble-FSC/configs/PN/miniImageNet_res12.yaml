@@ -1,0 +1,50 @@
+AUG:
+  MEAN:
+  - 0.4712
+  - 0.4499
+  - 0.4031
+  STD:
+  - 0.2726
+  - 0.2634
+  - 0.2794
+DATA:
+  IMG_SIZE: 84
+  NUM_WORKERS: 8
+  TRAIN:
+    BATCH_SIZE: 2
+    DATASET_NAMES:
+    - miniImageNet
+    DATASET_ROOTS:
+    - path-to-miniImageNet
+    EPISODE_DESCR_CONFIG:
+      MIN_EXAMPLES_IN_CLASS: 16
+      NUM_QUERY: 15
+      NUM_SUPPORT: 5
+      NUM_TASKS_PER_EPOCH: 1000
+      NUM_WAYS: 5
+      USE_DAG_HIERARCHY: false
+    IS_EPISODIC: true
+  VALID:
+    BATCH_SIZE: 8
+    DATASET_NAMES:
+    - miniImageNet
+    DATASET_ROOTS:
+    - path-to-miniImageNet
+    EPISODE_DESCR_CONFIG:
+      MAX_NUM_QUERY: 15
+      MIN_EXAMPLES_IN_CLASS: 16
+      NUM_QUERY: 15
+      NUM_SUPPORT: 5
+      NUM_TASKS_PER_EPOCH: 600
+      NUM_WAYS: 5
+      USE_DAG_HIERARCHY: false
+GPU_ID: 1
+MODEL:
+  BACKBONE: resnet12
+  CLASSIFIER: proto_head
+  NAME: mini_PN_res12-5SHOT
+  TYPE: Episodic_Model
+OUTPUT: ./new_metadataset_result
+TRAIN:
+  BASE_LR: 0.05
+  EPOCHS: 60
