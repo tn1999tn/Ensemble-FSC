@@ -14,13 +14,15 @@ All pre-trained models of training Algorithms can be found [here]().
 ## miniImageNet 
 Download [miniImageNet.zip](https://drive.google.com/file/d/1QEbHFIOKIM9KmId175QaLK-r22kgd7br/view?usp=share_link) and extract it.
 
-## tieredImageNet
+
+## tieredImageNet：
 
 
 ## CUB: 
 Download [`CUB_200_2011.tgz`](https://drive.google.com/file/d/1hbzc_P1FuxMkcabkgn9ZKinBwW683j45/view) and extract it.
 
 # Training and Testing
+
 
 
 ## Acknowlegements
