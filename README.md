@@ -11,18 +11,26 @@ pre-trained models of training Algorithms for miniImageNet can be found [here](h
 
 # Dataset Preparation
 
-## miniImageNet 
+## miniImageNet: 
 Download [miniImageNet.zip](https://drive.google.com/file/d/1QEbHFIOKIM9KmId175QaLK-r22kgd7br/view) and extract it.
 
 
-## tieredImageNet：
+## tieredImageNet:
 The data we used here is preprocessed by the repo of [FRN](https://github.com/Tsingularity/FRN).
 
 ## CUB: 
 Download [`CUB.rar`](https://drive.google.com/drive/my-drive) and extract it.
 
 # Training and Testing
+The basic configurations are defined in `cfg/`, overwritten by yaml files. 
+## Training Algorithms
+We give an example for training the 5-way 5-shot PN model with ResNet12 backbone on MiniImageNet in `write-config/write_yaml_PN.py`.
 
+## Testing individual
+Before testing, we need to seach for hyperparameters for adaptation algorithms, and we provide an example in `write-config/write_yaml_search.py`. During testing, we provide an example of the individual obtained by combining the PN training algorithm with the finetune adaptation algorithm in `write-config/write_yaml_search.py`.
+
+## Testing ensemble
+We give an example for testing the 5-way 5-shot ensemble model with ResNet12 backbone on MiniImageNet. Exemplar running scripts can be found in `train.sh`.
 
 
 ## Acknowlegements
