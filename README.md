@@ -1,4 +1,4 @@
-# Ensemble Few-Shot Classification via the Combination of Training and Adaptation Algorithms
+# Combining various Training and Adaptation Algorithms for Ensemble Few-Shot Classification
 
 # Installation
 Install packages using pip:
