@@ -7,7 +7,7 @@ $ pip install -r requirements.txt
 ```
 
 # Pre-trained Models
-Pre-trained models of training Algorithms for miniImageNet can be found [here](https://drive.google.com/drive/folders/1FwXK1K77qSI6eznJDBcdC9rLIvnFq4yz).
+All pre-trained models of training Algorithms can be found [here](https://drive.google.com/drive/folders/1FwXK1K77qSI6eznJDBcdC9rLIvnFq4yz).
 
 # Dataset Preparation
 
