@@ -792,6 +792,88 @@ def test(config, config1, config2, config3, config4, config5, config6, config7, 
     with open(path, 'w') as f:
         json.dump(result_dic, f)
 
+def pse_unlabel(all_pre_no0,ori_labels_no0,ori_imgs_no0,all_max_indices,labels,m):
+    
+    Z=12
+    no0_counts_0 = torch.sum(torch.eq(all_pre_no0, 0), dim=0)
+    no0_counts_1 = torch.sum(torch.eq(all_pre_no0, 1), dim=0)
+    no0_counts_2 = torch.sum(torch.eq(all_pre_no0, 2), dim=0)
+    no0_counts_3 = torch.sum(torch.eq(all_pre_no0, 3), dim=0)
+    no0_counts_4 = torch.sum(torch.eq(all_pre_no0, 4), dim=0)
+
+    no0_indices_0 = torch.where(no0_counts_0 >= Z)[0]
+    no0_indices_1 = torch.where(no0_counts_1 >= Z)[0]
+    no0_indices_2 = torch.where(no0_counts_2 >= Z)[0]
+    no0_indices_3 = torch.where(no0_counts_3 >= Z)[0]
+    no0_indices_4 = torch.where(no0_counts_4 >= Z)[0]
+
+    for i in no0_indices_0:
+        j = i / 75
+        k = i % 75
+        j = j.cpu()
+        j = j.item()
+        j = int(j)
+        k = k.cpu()
+        k = k.item()
+        k = int(k)
+        ori_labels_no0[j]["support"] = torch.cat((ori_labels_no0[j]["support"], torch.tensor([0]).cuda()))
+        ori_imgs_no0[j]["support"] = torch.cat(
+            (ori_imgs_no0[j]["support"], ori_imgs_no0[j]["query"][k].unsqueeze(0)), dim=0)
+        
+    for i in no0_indices_1:
+        j = i / 75
+        k = i % 75
+        j = j.cpu()
+        j = j.item()
+        j = int(j)
+        k = k.cpu()
+        k = k.item()
+        k = int(k)
+        ori_labels_no0[j]["support"] = torch.cat((ori_labels_no0[j]["support"], torch.tensor([1]).cuda()))
+        ori_imgs_no0[j]["support"] = torch.cat(
+            (ori_imgs_no0[j]["support"], ori_imgs_no0[j]["query"][k].unsqueeze(0)), dim=0)
+       
+    for i in no0_indices_2:
+        j = i / 75
+        k = i % 75
+        j = j.cpu()
+        j = j.item()
+        j = int(j)
+        k = k.cpu()
+        k = k.item()
+        k = int(k)
+        ori_labels_no0[j]["support"] = torch.cat((ori_labels_no0[j]["support"], torch.tensor([2]).cuda()))
+        ori_imgs_no0[j]["support"] = torch.cat(
+            (ori_imgs_no0[j]["support"], ori_imgs_no0[j]["query"][k].unsqueeze(0)), dim=0)
+       
+    for i in no0_indices_3:
+        j = i / 75
+        k = i % 75
+        j = j.cpu()
+        j = j.item()
+        j = int(j)
+        k = k.cpu()
+        k = k.item()
+        k = int(k)
+        ori_labels_no0[j]["support"] = torch.cat((ori_labels_no0[j]["support"], torch.tensor([3]).cuda()))
+        ori_imgs_no0[j]["support"] = torch.cat(
+            (ori_imgs_no0[j]["support"], ori_imgs_no0[j]["query"][k].unsqueeze(0)), dim=0)
+      
+    for i in no0_indices_4:
+        j = i / 75
+        k = i % 75
+        j = j.cpu()
+        j = j.item()
+        j = int(j)
+        k = k.cpu()
+        k = k.item()
+        k = int(k)
+        ori_labels_no0[j]["support"] = torch.cat((ori_labels_no0[j]["support"], torch.tensor([4]).cuda()))
+        ori_imgs_no0[j]["support"] = torch.cat(
+            (ori_imgs_no0[j]["support"], ori_imgs_no0[j]["query"][k].unsqueeze(0)), dim=0)
+    
+    return ori_imgs_no0,ori_labels_no0
+
 @torch.no_grad()
 def testing(config, dataset, data_loader, model, model1, model2, model3, model4, model5, model6, model7, model8, model9,
             model10, model11, model12, model13, model14, model15, model16, model17):
@@ -817,11 +899,10 @@ def testing(config, dataset, data_loader, model, model1, model2, model3, model4,
     batch_time = AverageMeter()
     loss_meter = AverageMeter()
     acc_meter = AverageMeter()
-
     end = time.time()
-
     dataset.set_epoch()
     acc_ci = []
+    Z = 12
     for idx, batches in enumerate(data_loader):
         dataset_index, imgs, labels = batches
 
@@ -892,12 +973,14 @@ def testing(config, dataset, data_loader, model, model1, model2, model3, model4,
 
         score_0 = []
         all_pre = []
+        all_max_indices = []
         for i, model in enumerate(models):
             score_no0 = model.test_forward(imgs, labels, dataset_index)
             score_no0 = torch.stack(score_no0)
             score_no0 = torch.softmax(score_no0, dim=2)
             score_0.append(score_no0)
             max_indices = torch.argmax(score_no0, dim=2)
+            all_max_indices.append(max_indices)
             max_indices = max_indices.view(-1)
             # print(max_indices)
             all_pre.append(max_indices)
@@ -1010,1349 +1093,44 @@ def testing(config, dataset, data_loader, model, model1, model2, model3, model4,
                 all_pre_no17.append(max_indices_no17)
         all_pre = torch.stack(all_pre)
         all_pre_no0 = torch.stack(all_pre_no0)
-
-
-        no0_counts_0 = torch.sum(torch.eq(all_pre_no0, 0), dim=0)
-        no0_counts_1 = torch.sum(torch.eq(all_pre_no0, 1), dim=0)
-        no0_counts_2 = torch.sum(torch.eq(all_pre_no0, 2), dim=0)
-        no0_counts_3 = torch.sum(torch.eq(all_pre_no0, 3), dim=0)
-        no0_counts_4 = torch.sum(torch.eq(all_pre_no0, 4), dim=0)
-
-        no0_indices_0 = torch.where(no0_counts_0 >= 12)[0]
-        no0_indices_1 = torch.where(no0_counts_1 >= 12)[0]
-        no0_indices_2 = torch.where(no0_counts_2 >= 12)[0]
-        no0_indices_3 = torch.where(no0_counts_3 >= 12)[0]
-        no0_indices_4 = torch.where(no0_counts_4 >= 12)[0]
-
-
-        for i in no0_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no0[j]["support"] = torch.cat((ori_labels_no0[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no0[j]["support"] = torch.cat(
-                (ori_imgs_no0[j]["support"], ori_imgs_no0[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no0_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no0[j]["support"] = torch.cat((ori_labels_no0[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no0[j]["support"] = torch.cat(
-                (ori_imgs_no0[j]["support"], ori_imgs_no0[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no0_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no0[j]["support"] = torch.cat((ori_labels_no0[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no0[j]["support"] = torch.cat(
-                (ori_imgs_no0[j]["support"], ori_imgs_no0[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no0_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no0[j]["support"] = torch.cat((ori_labels_no0[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no0[j]["support"] = torch.cat(
-                (ori_imgs_no0[j]["support"], ori_imgs_no0[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no0_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no0[j]["support"] = torch.cat((ori_labels_no0[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no0[j]["support"] = torch.cat(
-                (ori_imgs_no0[j]["support"], ori_imgs_no0[j]["query"][k].unsqueeze(0)), dim=0)
-
         all_pre_no1 = torch.stack(all_pre_no1)
-        no1_counts_0 = torch.sum(torch.eq(all_pre_no1, 0), dim=0)
-        no1_counts_1 = torch.sum(torch.eq(all_pre_no1, 1), dim=0)
-        no1_counts_2 = torch.sum(torch.eq(all_pre_no1, 2), dim=0)
-        no1_counts_3 = torch.sum(torch.eq(all_pre_no1, 3), dim=0)
-        no1_counts_4 = torch.sum(torch.eq(all_pre_no1, 4), dim=0)
-
-        no1_indices_0 = torch.where(no1_counts_0 >= 12)[0]
-        no1_indices_1 = torch.where(no1_counts_1 >= 12)[0]
-        no1_indices_2 = torch.where(no1_counts_2 >= 12)[0]
-        no1_indices_3 = torch.where(no1_counts_3 >= 12)[0]
-        no1_indices_4 = torch.where(no1_counts_4 >= 12)[0]
-
-
-        for i in no1_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no1[j]["support"] = torch.cat((ori_labels_no1[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no1[j]["support"] = torch.cat(
-                (ori_imgs_no1[j]["support"], ori_imgs_no1[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no1_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no1[j]["support"] = torch.cat((ori_labels_no1[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no1[j]["support"] = torch.cat(
-                (ori_imgs_no1[j]["support"], ori_imgs_no1[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no1_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no1[j]["support"] = torch.cat((ori_labels_no1[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no1[j]["support"] = torch.cat(
-                (ori_imgs_no1[j]["support"], ori_imgs_no1[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no1_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no1[j]["support"] = torch.cat((ori_labels_no1[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no1[j]["support"] = torch.cat(
-                (ori_imgs_no1[j]["support"], ori_imgs_no1[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no1_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no1[j]["support"] = torch.cat((ori_labels_no1[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no1[j]["support"] = torch.cat(
-                (ori_imgs_no1[j]["support"], ori_imgs_no1[j]["query"][k].unsqueeze(0)), dim=0)
         all_pre_no2 = torch.stack(all_pre_no2)
-        no2_counts_0 = torch.sum(torch.eq(all_pre_no2, 0), dim=0)
-        no2_counts_1 = torch.sum(torch.eq(all_pre_no2, 1), dim=0)
-        no2_counts_2 = torch.sum(torch.eq(all_pre_no2, 2), dim=0)
-        no2_counts_3 = torch.sum(torch.eq(all_pre_no2, 3), dim=0)
-        no2_counts_4 = torch.sum(torch.eq(all_pre_no2, 4), dim=0)
-
-        no2_indices_0 = torch.where(no2_counts_0 >= 12)[0]
-        no2_indices_1 = torch.where(no2_counts_1 >= 12)[0]
-        no2_indices_2 = torch.where(no2_counts_2 >= 12)[0]
-        no2_indices_3 = torch.where(no2_counts_3 >= 12)[0]
-        no2_indices_4 = torch.where(no2_counts_4 >= 12)[0]
-
-
-        for i in no2_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no2[j]["support"] = torch.cat((ori_labels_no2[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no2[j]["support"] = torch.cat(
-                (ori_imgs_no2[j]["support"], ori_imgs_no2[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no2_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no2[j]["support"] = torch.cat((ori_labels_no2[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no2[j]["support"] = torch.cat(
-                (ori_imgs_no2[j]["support"], ori_imgs_no2[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no2_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no2[j]["support"] = torch.cat((ori_labels_no2[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no2[j]["support"] = torch.cat(
-                (ori_imgs_no2[j]["support"], ori_imgs_no2[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no2_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no2[j]["support"] = torch.cat((ori_labels_no2[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no2[j]["support"] = torch.cat(
-                (ori_imgs_no2[j]["support"], ori_imgs_no2[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no2_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no2[j]["support"] = torch.cat((ori_labels_no2[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no2[j]["support"] = torch.cat(
-                (ori_imgs_no2[j]["support"], ori_imgs_no2[j]["query"][k].unsqueeze(0)), dim=0)
-
         all_pre_no3 = torch.stack(all_pre_no3)
-        no3_counts_0 = torch.sum(torch.eq(all_pre_no3, 0), dim=0)
-        no3_counts_1 = torch.sum(torch.eq(all_pre_no3, 1), dim=0)
-        no3_counts_2 = torch.sum(torch.eq(all_pre_no3, 2), dim=0)
-        no3_counts_3 = torch.sum(torch.eq(all_pre_no3, 3), dim=0)
-        no3_counts_4 = torch.sum(torch.eq(all_pre_no3, 4), dim=0)
-
-        no3_indices_0 = torch.where(no3_counts_0 >= 12)[0]
-        no3_indices_1 = torch.where(no3_counts_1 >= 12)[0]
-        no3_indices_2 = torch.where(no3_counts_2 >= 12)[0]
-        no3_indices_3 = torch.where(no3_counts_3 >= 12)[0]
-        no3_indices_4 = torch.where(no3_counts_4 >= 12)[0]
-
-
-        for i in no3_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no3[j]["support"] = torch.cat((ori_labels_no3[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no3[j]["support"] = torch.cat(
-                (ori_imgs_no3[j]["support"], ori_imgs_no3[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no3_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no3[j]["support"] = torch.cat((ori_labels_no3[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no3[j]["support"] = torch.cat(
-                (ori_imgs_no3[j]["support"], ori_imgs_no3[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no3_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no3[j]["support"] = torch.cat((ori_labels_no3[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no3[j]["support"] = torch.cat(
-                (ori_imgs_no3[j]["support"], ori_imgs_no3[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no3_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no3[j]["support"] = torch.cat((ori_labels_no3[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no3[j]["support"] = torch.cat(
-                (ori_imgs_no3[j]["support"], ori_imgs_no3[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no3_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no3[j]["support"] = torch.cat((ori_labels_no3[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no3[j]["support"] = torch.cat(
-                (ori_imgs_no3[j]["support"], ori_imgs_no3[j]["query"][k].unsqueeze(0)), dim=0)
-
         all_pre_no4 = torch.stack(all_pre_no4)
-        no4_counts_0 = torch.sum(torch.eq(all_pre_no4, 0), dim=0)
-        no4_counts_1 = torch.sum(torch.eq(all_pre_no4, 1), dim=0)
-        no4_counts_2 = torch.sum(torch.eq(all_pre_no4, 2), dim=0)
-        no4_counts_3 = torch.sum(torch.eq(all_pre_no4, 3), dim=0)
-        no4_counts_4 = torch.sum(torch.eq(all_pre_no4, 4), dim=0)
-
-        no4_indices_0 = torch.where(no4_counts_0 >= 12)[0]
-        no4_indices_1 = torch.where(no4_counts_1 >= 12)[0]
-        no4_indices_2 = torch.where(no4_counts_2 >= 12)[0]
-        no4_indices_3 = torch.where(no4_counts_3 >= 12)[0]
-        no4_indices_4 = torch.where(no4_counts_4 >= 12)[0]
-
-
-        for i in no4_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no4[j]["support"] = torch.cat((ori_labels_no4[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no4[j]["support"] = torch.cat(
-                (ori_imgs_no4[j]["support"], ori_imgs_no4[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no4_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no4[j]["support"] = torch.cat((ori_labels_no4[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no4[j]["support"] = torch.cat(
-                (ori_imgs_no4[j]["support"], ori_imgs_no4[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no4_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no4[j]["support"] = torch.cat((ori_labels_no4[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no4[j]["support"] = torch.cat(
-                (ori_imgs_no4[j]["support"], ori_imgs_no4[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no4_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no4[j]["support"] = torch.cat((ori_labels_no4[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no4[j]["support"] = torch.cat(
-                (ori_imgs_no4[j]["support"], ori_imgs_no4[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no4_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no4[j]["support"] = torch.cat((ori_labels_no4[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no4[j]["support"] = torch.cat(
-                (ori_imgs_no4[j]["support"], ori_imgs_no4[j]["query"][k].unsqueeze(0)), dim=0)
-
         all_pre_no5 = torch.stack(all_pre_no5)
-        no5_counts_0 = torch.sum(torch.eq(all_pre_no5, 0), dim=0)
-        no5_counts_1 = torch.sum(torch.eq(all_pre_no5, 1), dim=0)
-        no5_counts_2 = torch.sum(torch.eq(all_pre_no5, 2), dim=0)
-        no5_counts_3 = torch.sum(torch.eq(all_pre_no5, 3), dim=0)
-        no5_counts_4 = torch.sum(torch.eq(all_pre_no5, 4), dim=0)
-
-        no5_indices_0 = torch.where(no5_counts_0 >= 12)[0]
-        no5_indices_1 = torch.where(no5_counts_1 >= 12)[0]
-        no5_indices_2 = torch.where(no5_counts_2 >= 12)[0]
-        no5_indices_3 = torch.where(no5_counts_3 >= 12)[0]
-        no5_indices_4 = torch.where(no5_counts_4 >= 12)[0]
-
-
-        for i in no5_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no5[j]["support"] = torch.cat((ori_labels_no5[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no5[j]["support"] = torch.cat(
-                (ori_imgs_no5[j]["support"], ori_imgs_no5[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no5_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no5[j]["support"] = torch.cat((ori_labels_no5[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no5[j]["support"] = torch.cat(
-                (ori_imgs_no5[j]["support"], ori_imgs_no5[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no5_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no5[j]["support"] = torch.cat((ori_labels_no5[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no5[j]["support"] = torch.cat(
-                (ori_imgs_no5[j]["support"], ori_imgs_no5[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no5_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no5[j]["support"] = torch.cat((ori_labels_no5[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no5[j]["support"] = torch.cat(
-                (ori_imgs_no5[j]["support"], ori_imgs_no5[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no5_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no5[j]["support"] = torch.cat((ori_labels_no5[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no5[j]["support"] = torch.cat(
-                (ori_imgs_no5[j]["support"], ori_imgs_no5[j]["query"][k].unsqueeze(0)), dim=0)
-
         all_pre_no6 = torch.stack(all_pre_no6)
-        no6_counts_0 = torch.sum(torch.eq(all_pre_no6, 0), dim=0)
-        no6_counts_1 = torch.sum(torch.eq(all_pre_no6, 1), dim=0)
-        no6_counts_2 = torch.sum(torch.eq(all_pre_no6, 2), dim=0)
-        no6_counts_3 = torch.sum(torch.eq(all_pre_no6, 3), dim=0)
-        no6_counts_4 = torch.sum(torch.eq(all_pre_no6, 4), dim=0)
-
-        no6_indices_0 = torch.where(no6_counts_0 >= 12)[0]
-        no6_indices_1 = torch.where(no6_counts_1 >= 12)[0]
-        no6_indices_2 = torch.where(no6_counts_2 >= 12)[0]
-        no6_indices_3 = torch.where(no6_counts_3 >= 12)[0]
-        no6_indices_4 = torch.where(no6_counts_4 >= 12)[0]
-
-
-        for i in no6_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no6[j]["support"] = torch.cat((ori_labels_no6[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no6[j]["support"] = torch.cat(
-                (ori_imgs_no6[j]["support"], ori_imgs_no6[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no6_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no6[j]["support"] = torch.cat((ori_labels_no6[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no6[j]["support"] = torch.cat(
-                (ori_imgs_no6[j]["support"], ori_imgs_no6[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no6_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no6[j]["support"] = torch.cat((ori_labels_no6[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no6[j]["support"] = torch.cat(
-                (ori_imgs_no6[j]["support"], ori_imgs_no6[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no6_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no6[j]["support"] = torch.cat((ori_labels_no6[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no6[j]["support"] = torch.cat(
-                (ori_imgs_no6[j]["support"], ori_imgs_no6[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no6_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no6[j]["support"] = torch.cat((ori_labels_no6[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no6[j]["support"] = torch.cat(
-                (ori_imgs_no6[j]["support"], ori_imgs_no6[j]["query"][k].unsqueeze(0)), dim=0)
-
         all_pre_no7 = torch.stack(all_pre_no7)
-        no7_counts_0 = torch.sum(torch.eq(all_pre_no7, 0), dim=0)
-        no7_counts_1 = torch.sum(torch.eq(all_pre_no7, 1), dim=0)
-        no7_counts_2 = torch.sum(torch.eq(all_pre_no7, 2), dim=0)
-        no7_counts_3 = torch.sum(torch.eq(all_pre_no7, 3), dim=0)
-        no7_counts_4 = torch.sum(torch.eq(all_pre_no7, 4), dim=0)
-
-        no7_indices_0 = torch.where(no7_counts_0 >= 12)[0]
-        no7_indices_1 = torch.where(no7_counts_1 >= 12)[0]
-        no7_indices_2 = torch.where(no7_counts_2 >= 12)[0]
-        no7_indices_3 = torch.where(no7_counts_3 >= 12)[0]
-        no7_indices_4 = torch.where(no7_counts_4 >= 12)[0]
-
-
-        for i in no7_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no7[j]["support"] = torch.cat((ori_labels_no7[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no7[j]["support"] = torch.cat(
-                (ori_imgs_no7[j]["support"], ori_imgs_no7[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no7_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no7[j]["support"] = torch.cat((ori_labels_no7[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no7[j]["support"] = torch.cat(
-                (ori_imgs_no7[j]["support"], ori_imgs_no7[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no7_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no7[j]["support"] = torch.cat((ori_labels_no7[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no7[j]["support"] = torch.cat(
-                (ori_imgs_no7[j]["support"], ori_imgs_no7[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no7_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no7[j]["support"] = torch.cat((ori_labels_no7[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no7[j]["support"] = torch.cat(
-                (ori_imgs_no7[j]["support"], ori_imgs_no7[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no7_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no7[j]["support"] = torch.cat((ori_labels_no7[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no7[j]["support"] = torch.cat(
-                (ori_imgs_no7[j]["support"], ori_imgs_no7[j]["query"][k].unsqueeze(0)), dim=0)
-
         all_pre_no8 = torch.stack(all_pre_no8)
-        no8_counts_0 = torch.sum(torch.eq(all_pre_no8, 0), dim=0)
-        no8_counts_1 = torch.sum(torch.eq(all_pre_no8, 1), dim=0)
-        no8_counts_2 = torch.sum(torch.eq(all_pre_no8, 2), dim=0)
-        no8_counts_3 = torch.sum(torch.eq(all_pre_no8, 3), dim=0)
-        no8_counts_4 = torch.sum(torch.eq(all_pre_no8, 4), dim=0)
-
-        no8_indices_0 = torch.where(no8_counts_0 >= 12)[0]
-        no8_indices_1 = torch.where(no8_counts_1 >= 12)[0]
-        no8_indices_2 = torch.where(no8_counts_2 >= 12)[0]
-        no8_indices_3 = torch.where(no8_counts_3 >= 12)[0]
-        no8_indices_4 = torch.where(no8_counts_4 >= 12)[0]
-
-        for i in no8_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no8[j]["support"] = torch.cat((ori_labels_no8[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no8[j]["support"] = torch.cat(
-                (ori_imgs_no8[j]["support"], ori_imgs_no8[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no8_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no8[j]["support"] = torch.cat((ori_labels_no8[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no8[j]["support"] = torch.cat(
-                (ori_imgs_no8[j]["support"], ori_imgs_no8[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no8_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no8[j]["support"] = torch.cat((ori_labels_no8[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no8[j]["support"] = torch.cat(
-                (ori_imgs_no8[j]["support"], ori_imgs_no8[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no8_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no8[j]["support"] = torch.cat((ori_labels_no8[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no8[j]["support"] = torch.cat(
-                (ori_imgs_no8[j]["support"], ori_imgs_no8[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no8_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no8[j]["support"] = torch.cat((ori_labels_no8[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no8[j]["support"] = torch.cat(
-                (ori_imgs_no8[j]["support"], ori_imgs_no8[j]["query"][k].unsqueeze(0)), dim=0)
-
         all_pre_no9 = torch.stack(all_pre_no9)
-        no9_counts_0 = torch.sum(torch.eq(all_pre_no9, 0), dim=0)
-        no9_counts_1 = torch.sum(torch.eq(all_pre_no9, 1), dim=0)
-        no9_counts_2 = torch.sum(torch.eq(all_pre_no9, 2), dim=0)
-        no9_counts_3 = torch.sum(torch.eq(all_pre_no9, 3), dim=0)
-        no9_counts_4 = torch.sum(torch.eq(all_pre_no9, 4), dim=0)
-
-        no9_indices_0 = torch.where(no9_counts_0 >= 12)[0]
-        no9_indices_1 = torch.where(no9_counts_1 >= 12)[0]
-        no9_indices_2 = torch.where(no9_counts_2 >= 12)[0]
-        no9_indices_3 = torch.where(no9_counts_3 >= 12)[0]
-        no9_indices_4 = torch.where(no9_counts_4 >= 12)[0]
-
-
-        for i in no9_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no9[j]["support"] = torch.cat((ori_labels_no9[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no9[j]["support"] = torch.cat(
-                (ori_imgs_no9[j]["support"], ori_imgs_no9[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no9_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no9[j]["support"] = torch.cat((ori_labels_no9[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no9[j]["support"] = torch.cat(
-                (ori_imgs_no9[j]["support"], ori_imgs_no9[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no9_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no9[j]["support"] = torch.cat((ori_labels_no9[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no9[j]["support"] = torch.cat(
-                (ori_imgs_no9[j]["support"], ori_imgs_no9[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no9_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no9[j]["support"] = torch.cat((ori_labels_no9[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no9[j]["support"] = torch.cat(
-                (ori_imgs_no9[j]["support"], ori_imgs_no9[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no9_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no9[j]["support"] = torch.cat((ori_labels_no9[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no9[j]["support"] = torch.cat(
-                (ori_imgs_no9[j]["support"], ori_imgs_no9[j]["query"][k].unsqueeze(0)), dim=0)
-
         all_pre_no10 = torch.stack(all_pre_no10)
-        no10_counts_0 = torch.sum(torch.eq(all_pre_no10, 0), dim=0)
-        no10_counts_1 = torch.sum(torch.eq(all_pre_no10, 1), dim=0)
-        no10_counts_2 = torch.sum(torch.eq(all_pre_no10, 2), dim=0)
-        no10_counts_3 = torch.sum(torch.eq(all_pre_no10, 3), dim=0)
-        no10_counts_4 = torch.sum(torch.eq(all_pre_no10, 4), dim=0)
-
-        no10_indices_0 = torch.where(no10_counts_0 >= 12)[0]
-        no10_indices_1 = torch.where(no10_counts_1 >= 12)[0]
-        no10_indices_2 = torch.where(no10_counts_2 >= 12)[0]
-        no10_indices_3 = torch.where(no10_counts_3 >= 12)[0]
-        no10_indices_4 = torch.where(no10_counts_4 >= 12)[0]
-
-
-        for i in no10_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no10[j]["support"] = torch.cat((ori_labels_no10[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no10[j]["support"] = torch.cat(
-                (ori_imgs_no10[j]["support"], ori_imgs_no10[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no10_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no10[j]["support"] = torch.cat((ori_labels_no10[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no10[j]["support"] = torch.cat(
-                (ori_imgs_no10[j]["support"], ori_imgs_no10[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no10_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no10[j]["support"] = torch.cat((ori_labels_no10[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no10[j]["support"] = torch.cat(
-                (ori_imgs_no10[j]["support"], ori_imgs_no10[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no10_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no10[j]["support"] = torch.cat((ori_labels_no10[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no10[j]["support"] = torch.cat(
-                (ori_imgs_no10[j]["support"], ori_imgs_no10[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no10_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no10[j]["support"] = torch.cat((ori_labels_no10[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no10[j]["support"] = torch.cat(
-                (ori_imgs_no10[j]["support"], ori_imgs_no10[j]["query"][k].unsqueeze(0)), dim=0)
-
         all_pre_no11 = torch.stack(all_pre_no11)
-        no11_counts_0 = torch.sum(torch.eq(all_pre_no11, 0), dim=0)
-        no11_counts_1 = torch.sum(torch.eq(all_pre_no11, 1), dim=0)
-        no11_counts_2 = torch.sum(torch.eq(all_pre_no11, 2), dim=0)
-        no11_counts_3 = torch.sum(torch.eq(all_pre_no11, 3), dim=0)
-        no11_counts_4 = torch.sum(torch.eq(all_pre_no11, 4), dim=0)
-
-        no11_indices_0 = torch.where(no11_counts_0 >= 12)[0]
-        no11_indices_1 = torch.where(no11_counts_1 >= 12)[0]
-        no11_indices_2 = torch.where(no11_counts_2 >= 12)[0]
-        no11_indices_3 = torch.where(no11_counts_3 >= 12)[0]
-        no11_indices_4 = torch.where(no11_counts_4 >= 12)[0]
-
-        for i in no11_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no11[j]["support"] = torch.cat((ori_labels_no11[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no11[j]["support"] = torch.cat(
-                (ori_imgs_no11[j]["support"], ori_imgs_no11[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no11_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no11[j]["support"] = torch.cat((ori_labels_no11[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no11[j]["support"] = torch.cat(
-                (ori_imgs_no11[j]["support"], ori_imgs_no11[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no11_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no11[j]["support"] = torch.cat((ori_labels_no11[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no11[j]["support"] = torch.cat(
-                (ori_imgs_no11[j]["support"], ori_imgs_no11[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no11_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no11[j]["support"] = torch.cat((ori_labels_no11[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no11[j]["support"] = torch.cat(
-                (ori_imgs_no11[j]["support"], ori_imgs_no11[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no11_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no11[j]["support"] = torch.cat((ori_labels_no11[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no11[j]["support"] = torch.cat(
-                (ori_imgs_no11[j]["support"], ori_imgs_no11[j]["query"][k].unsqueeze(0)), dim=0)
-
         all_pre_no12 = torch.stack(all_pre_no12)
-        no12_counts_0 = torch.sum(torch.eq(all_pre_no12, 0), dim=0)
-        no12_counts_1 = torch.sum(torch.eq(all_pre_no12, 1), dim=0)
-        no12_counts_2 = torch.sum(torch.eq(all_pre_no12, 2), dim=0)
-        no12_counts_3 = torch.sum(torch.eq(all_pre_no12, 3), dim=0)
-        no12_counts_4 = torch.sum(torch.eq(all_pre_no12, 4), dim=0)
-
-        no12_indices_0 = torch.where(no12_counts_0 >= 12)[0]
-        no12_indices_1 = torch.where(no12_counts_1 >= 12)[0]
-        no12_indices_2 = torch.where(no12_counts_2 >= 12)[0]
-        no12_indices_3 = torch.where(no12_counts_3 >= 12)[0]
-        no12_indices_4 = torch.where(no12_counts_4 >= 12)[0]
-
-
-        for i in no12_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no12[j]["support"] = torch.cat((ori_labels_no12[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no12[j]["support"] = torch.cat(
-                (ori_imgs_no12[j]["support"], ori_imgs_no12[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no12_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no12[j]["support"] = torch.cat((ori_labels_no12[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no12[j]["support"] = torch.cat(
-                (ori_imgs_no12[j]["support"], ori_imgs_no12[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no12_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no12[j]["support"] = torch.cat((ori_labels_no12[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no12[j]["support"] = torch.cat(
-                (ori_imgs_no12[j]["support"], ori_imgs_no12[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no12_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no12[j]["support"] = torch.cat((ori_labels_no12[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no12[j]["support"] = torch.cat(
-                (ori_imgs_no12[j]["support"], ori_imgs_no12[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no12_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no12[j]["support"] = torch.cat((ori_labels_no12[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no12[j]["support"] = torch.cat(
-                (ori_imgs_no12[j]["support"], ori_imgs_no12[j]["query"][k].unsqueeze(0)), dim=0)
-
         all_pre_no13 = torch.stack(all_pre_no13)
-        no13_counts_0 = torch.sum(torch.eq(all_pre_no13, 0), dim=0)
-        no13_counts_1 = torch.sum(torch.eq(all_pre_no13, 1), dim=0)
-        no13_counts_2 = torch.sum(torch.eq(all_pre_no13, 2), dim=0)
-        no13_counts_3 = torch.sum(torch.eq(all_pre_no13, 3), dim=0)
-        no13_counts_4 = torch.sum(torch.eq(all_pre_no13, 4), dim=0)
-
-        no13_indices_0 = torch.where(no13_counts_0 >= 12)[0]
-        no13_indices_1 = torch.where(no13_counts_1 >= 12)[0]
-        no13_indices_2 = torch.where(no13_counts_2 >= 12)[0]
-        no13_indices_3 = torch.where(no13_counts_3 >= 12)[0]
-        no13_indices_4 = torch.where(no13_counts_4 >= 12)[0]
-
-
-        for i in no13_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no13[j]["support"] = torch.cat((ori_labels_no13[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no13[j]["support"] = torch.cat(
-                (ori_imgs_no13[j]["support"], ori_imgs_no13[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no13_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no13[j]["support"] = torch.cat((ori_labels_no13[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no13[j]["support"] = torch.cat(
-                (ori_imgs_no13[j]["support"], ori_imgs_no13[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no13_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no13[j]["support"] = torch.cat((ori_labels_no13[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no13[j]["support"] = torch.cat(
-                (ori_imgs_no13[j]["support"], ori_imgs_no13[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no13_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no13[j]["support"] = torch.cat((ori_labels_no13[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no13[j]["support"] = torch.cat(
-                (ori_imgs_no13[j]["support"], ori_imgs_no13[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no13_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no13[j]["support"] = torch.cat((ori_labels_no13[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no13[j]["support"] = torch.cat(
-                (ori_imgs_no13[j]["support"], ori_imgs_no13[j]["query"][k].unsqueeze(0)), dim=0)
-
         all_pre_no14 = torch.stack(all_pre_no14)
-        no14_counts_0 = torch.sum(torch.eq(all_pre_no14, 0), dim=0)
-        no14_counts_1 = torch.sum(torch.eq(all_pre_no14, 1), dim=0)
-        no14_counts_2 = torch.sum(torch.eq(all_pre_no14, 2), dim=0)
-        no14_counts_3 = torch.sum(torch.eq(all_pre_no14, 3), dim=0)
-        no14_counts_4 = torch.sum(torch.eq(all_pre_no14, 4), dim=0)
-
-        no14_indices_0 = torch.where(no14_counts_0 >= 12)[0]
-        no14_indices_1 = torch.where(no14_counts_1 >= 12)[0]
-        no14_indices_2 = torch.where(no14_counts_2 >= 12)[0]
-        no14_indices_3 = torch.where(no14_counts_3 >= 12)[0]
-        no14_indices_4 = torch.where(no14_counts_4 >= 12)[0]
-
-        for i in no14_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no14[j]["support"] = torch.cat((ori_labels_no14[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no14[j]["support"] = torch.cat(
-                (ori_imgs_no14[j]["support"], ori_imgs_no14[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no14_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no14[j]["support"] = torch.cat((ori_labels_no14[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no14[j]["support"] = torch.cat(
-                (ori_imgs_no14[j]["support"], ori_imgs_no14[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no14_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no14[j]["support"] = torch.cat((ori_labels_no14[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no14[j]["support"] = torch.cat(
-                (ori_imgs_no14[j]["support"], ori_imgs_no14[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no14_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no14[j]["support"] = torch.cat((ori_labels_no14[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no14[j]["support"] = torch.cat(
-                (ori_imgs_no14[j]["support"], ori_imgs_no14[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no14_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no14[j]["support"] = torch.cat((ori_labels_no14[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no14[j]["support"] = torch.cat(
-                (ori_imgs_no14[j]["support"], ori_imgs_no14[j]["query"][k].unsqueeze(0)), dim=0)
-
         all_pre_no15 = torch.stack(all_pre_no15)
-        no15_counts_0 = torch.sum(torch.eq(all_pre_no15, 0), dim=0)
-        no15_counts_1 = torch.sum(torch.eq(all_pre_no15, 1), dim=0)
-        no15_counts_2 = torch.sum(torch.eq(all_pre_no15, 2), dim=0)
-        no15_counts_3 = torch.sum(torch.eq(all_pre_no15, 3), dim=0)
-        no15_counts_4 = torch.sum(torch.eq(all_pre_no15, 4), dim=0)
-
-        no15_indices_0 = torch.where(no15_counts_0 >= 12)[0]
-        no15_indices_1 = torch.where(no15_counts_1 >= 12)[0]
-        no15_indices_2 = torch.where(no15_counts_2 >= 12)[0]
-        no15_indices_3 = torch.where(no15_counts_3 >= 12)[0]
-        no15_indices_4 = torch.where(no15_counts_4 >= 12)[0]
-
-        for i in no15_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no15[j]["support"] = torch.cat((ori_labels_no15[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no15[j]["support"] = torch.cat(
-                (ori_imgs_no15[j]["support"], ori_imgs_no15[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no15_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no15[j]["support"] = torch.cat((ori_labels_no15[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no15[j]["support"] = torch.cat(
-                (ori_imgs_no15[j]["support"], ori_imgs_no15[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no15_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no15[j]["support"] = torch.cat((ori_labels_no15[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no15[j]["support"] = torch.cat(
-                (ori_imgs_no15[j]["support"], ori_imgs_no15[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no15_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no15[j]["support"] = torch.cat((ori_labels_no15[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no15[j]["support"] = torch.cat(
-                (ori_imgs_no15[j]["support"], ori_imgs_no15[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no15_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no15[j]["support"] = torch.cat((ori_labels_no15[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no15[j]["support"] = torch.cat(
-                (ori_imgs_no15[j]["support"], ori_imgs_no15[j]["query"][k].unsqueeze(0)), dim=0)
-
         all_pre_no16 = torch.stack(all_pre_no16)
-        no16_counts_0 = torch.sum(torch.eq(all_pre_no16, 0), dim=0)
-        no16_counts_1 = torch.sum(torch.eq(all_pre_no16, 1), dim=0)
-        no16_counts_2 = torch.sum(torch.eq(all_pre_no16, 2), dim=0)
-        no16_counts_3 = torch.sum(torch.eq(all_pre_no16, 3), dim=0)
-        no16_counts_4 = torch.sum(torch.eq(all_pre_no16, 4), dim=0)
-
-        no16_indices_0 = torch.where(no16_counts_0 >= 12)[0]
-        no16_indices_1 = torch.where(no16_counts_1 >= 12)[0]
-        no16_indices_2 = torch.where(no16_counts_2 >= 12)[0]
-        no16_indices_3 = torch.where(no16_counts_3 >= 12)[0]
-        no16_indices_4 = torch.where(no16_counts_4 >= 12)[0]
-        for i in no16_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no16[j]["support"] = torch.cat((ori_labels_no16[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no16[j]["support"] = torch.cat(
-                (ori_imgs_no16[j]["support"], ori_imgs_no16[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no16_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no16[j]["support"] = torch.cat((ori_labels_no16[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no16[j]["support"] = torch.cat(
-                (ori_imgs_no16[j]["support"], ori_imgs_no16[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no16_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no16[j]["support"] = torch.cat((ori_labels_no16[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no16[j]["support"] = torch.cat(
-                (ori_imgs_no16[j]["support"], ori_imgs_no16[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no16_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no16[j]["support"] = torch.cat((ori_labels_no16[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no16[j]["support"] = torch.cat(
-                (ori_imgs_no16[j]["support"], ori_imgs_no16[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no16_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no16[j]["support"] = torch.cat((ori_labels_no16[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no16[j]["support"] = torch.cat(
-                (ori_imgs_no16[j]["support"], ori_imgs_no16[j]["query"][k].unsqueeze(0)), dim=0)
-
         all_pre_no17 = torch.stack(all_pre_no17)
-        no17_counts_0 = torch.sum(torch.eq(all_pre_no17, 0), dim=0)
-        no17_counts_1 = torch.sum(torch.eq(all_pre_no17, 1), dim=0)
-        no17_counts_2 = torch.sum(torch.eq(all_pre_no17, 2), dim=0)
-        no17_counts_3 = torch.sum(torch.eq(all_pre_no17, 3), dim=0)
-        no17_counts_4 = torch.sum(torch.eq(all_pre_no17, 4), dim=0)
 
-        no17_indices_0 = torch.where(no17_counts_0 >= 12)[0]
-        no17_indices_1 = torch.where(no17_counts_1 >= 12)[0]
-        no17_indices_2 = torch.where(no17_counts_2 >= 12)[0]
-        no17_indices_3 = torch.where(no17_counts_3 >= 12)[0]
-        no17_indices_4 = torch.where(no17_counts_4 >= 12)[0]
+        ori_imgs_no0, ori_labels_no0 = pse_unlabel(all_pre_no0, ori_labels_no0, ori_imgs_no0, all_max_indices,labels, 0)
+        ori_imgs_no1, ori_labels_no1 = pse_unlabel(all_pre_no1, ori_labels_no1, ori_imgs_no1, all_max_indices,labels, 1)
+        ori_imgs_no2, ori_labels_no2 = pse_unlabel(all_pre_no2, ori_labels_no2, ori_imgs_no2, all_max_indices,labels, 2)
+        ori_imgs_no3, ori_labels_no3 = pse_unlabel(all_pre_no3, ori_labels_no3, ori_imgs_no3, all_max_indices,labels, 3)
+        ori_imgs_no4, ori_labels_no4 = pse_unlabel(all_pre_no4, ori_labels_no4, ori_imgs_no4, all_max_indices,labels, 4)
+        ori_imgs_no5, ori_labels_no5 = pse_unlabel(all_pre_no5, ori_labels_no5, ori_imgs_no5, all_max_indices,labels, 5)
+        ori_imgs_no6, ori_labels_no6 = pse_unlabel(all_pre_no6, ori_labels_no6, ori_imgs_no6, all_max_indices,labels, 6)
+        ori_imgs_no7, ori_labels_no7 = pse_unlabel(all_pre_no7, ori_labels_no7, ori_imgs_no7, all_max_indices,labels, 7)
+        ori_imgs_no8, ori_labels_no8 = pse_unlabel(all_pre_no8, ori_labels_no8, ori_imgs_no8, all_max_indices,labels, 8)
+        ori_imgs_no9, ori_labels_no9 = pse_unlabel(all_pre_no9, ori_labels_no9, ori_imgs_no9, all_max_indices,labels, 9)
+        ori_imgs_no10, ori_labels_no10 = pse_unlabel(all_pre_no10, ori_labels_no10, ori_imgs_no10, all_max_indices,labels, 10)
+        ori_imgs_no11, ori_labels_no11 = pse_unlabel(all_pre_no11, ori_labels_no11, ori_imgs_no11, all_max_indices,labels, 11)
+        ori_imgs_no12, ori_labels_no12 = pse_unlabel(all_pre_no12, ori_labels_no12, ori_imgs_no12, all_max_indices,labels, 12)
+        ori_imgs_no13, ori_labels_no13 = pse_unlabel(all_pre_no13, ori_labels_no13, ori_imgs_no13, all_max_indices,labels, 13)
+        ori_imgs_no14, ori_labels_no14 = pse_unlabel(all_pre_no14, ori_labels_no14, ori_imgs_no14, all_max_indices,labels, 14)
+        ori_imgs_no15, ori_labels_no15 = pse_unlabel(all_pre_no15, ori_labels_no15, ori_imgs_no15, all_max_indices,labels, 15)
+        ori_imgs_no16, ori_labels_no16 = pse_unlabel(all_pre_no16, ori_labels_no16, ori_imgs_no16, all_max_indices,labels, 16)
+        ori_imgs_no17, ori_labels_no17 = pse_unlabel(all_pre_no17, ori_labels_no17, ori_imgs_no17, all_max_indices,labels, 17)
 
 
-        for i in no17_indices_0:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no17[j]["support"] = torch.cat((ori_labels_no17[j]["support"], torch.tensor([0]).cuda()))
-            ori_imgs_no17[j]["support"] = torch.cat(
-                (ori_imgs_no17[j]["support"], ori_imgs_no17[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no17_indices_1:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no17[j]["support"] = torch.cat((ori_labels_no17[j]["support"], torch.tensor([1]).cuda()))
-            ori_imgs_no17[j]["support"] = torch.cat(
-                (ori_imgs_no17[j]["support"], ori_imgs_no17[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no17_indices_2:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no17[j]["support"] = torch.cat((ori_labels_no17[j]["support"], torch.tensor([2]).cuda()))
-            ori_imgs_no17[j]["support"] = torch.cat(
-                (ori_imgs_no17[j]["support"], ori_imgs_no17[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no17_indices_3:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no17[j]["support"] = torch.cat((ori_labels_no17[j]["support"], torch.tensor([3]).cuda()))
-            ori_imgs_no17[j]["support"] = torch.cat(
-                (ori_imgs_no17[j]["support"], ori_imgs_no17[j]["query"][k].unsqueeze(0)), dim=0)
-        for i in no17_indices_4:
-            j = i / 75
-            k = i % 75
-            j = j.cpu()
-            j = j.item()
-            j = int(j)
-            k = k.cpu()
-            k = k.item()
-            k = int(k)
-            ori_labels_no17[j]["support"] = torch.cat((ori_labels_no17[j]["support"], torch.tensor([4]).cuda()))
-            ori_imgs_no17[j]["support"] = torch.cat(
-                (ori_imgs_no17[j]["support"], ori_imgs_no17[j]["query"][k].unsqueeze(0)), dim=0)
 
         q_counts0 = []
         for i, pre in enumerate(
@@ -2366,19 +1144,19 @@ def testing(config, dataset, data_loader, model, model1, model2, model3, model4,
             s_3 = torch.sum(torch.eq(pre, 3), dim=0)
             s_4 = torch.sum(torch.eq(pre, 4), dim=0)
             for j in range(s_0.size(0)):
-                if s_0[j] >= 12 and all_pre[i, j] != 0:
+                if s_0[j] >= Z and all_pre[i, j] != 0:
                     q_count += 1
             for j in range(s_1.size(0)):
-                if s_1[j] >= 12 and all_pre[i, j] != 1:
+                if s_1[j] >= Z and all_pre[i, j] != 1:
                     q_count += 1
             for j in range(s_2.size(0)):
-                if s_2[j] >= 12 and all_pre[i, j] != 2:
+                if s_2[j] >= Z and all_pre[i, j] != 2:
                     q_count += 1
             for j in range(s_3.size(0)):
-                if s_3[j] >= 12 and all_pre[i, j] != 3:
+                if s_3[j] >= Z and all_pre[i, j] != 3:
                     q_count += 1
             for j in range(s_4.size(0)):
-                if s_4[j] >= 12 and all_pre[i, j] != 4:
+                if s_4[j] >= Z and all_pre[i, j] != 4:
                     q_count += 1
             q_counts0.append(q_count.item())
 
@@ -2494,21 +1272,22 @@ def testing(config, dataset, data_loader, model, model1, model2, model3, model4,
             s_3 = torch.sum(torch.eq(pre, 3), dim=0)
             s_4 = torch.sum(torch.eq(pre, 4), dim=0)
             for j in range(s_0.size(0)):
-                if s_0[j] >= 12 and all_pre_1[i, j] != 0:
+                if s_0[j] >= Z and all_pre_1[i, j] != 0:
                     q_count += 1
             for j in range(s_1.size(0)):
-                if s_1[j] >= 12 and all_pre_1[i, j] != 1:
+                if s_1[j] >= Z and all_pre_1[i, j] != 1:
                     q_count += 1
             for j in range(s_2.size(0)):
-                if s_2[j] >= 12 and all_pre_1[i, j] != 2:
+                if s_2[j] >= Z and all_pre_1[i, j] != 2:
                     q_count += 1
             for j in range(s_3.size(0)):
-                if s_3[j] >= 12 and all_pre_1[i, j] != 3:
+                if s_3[j] >= Z and all_pre_1[i, j] != 3:
                     q_count += 1
             for j in range(s_4.size(0)):
-                if s_4[j] >= 12 and all_pre_1[i, j] != 4:
+                if s_4[j] >= Z and all_pre_1[i, j] != 4:
                     q_count += 1
             q_counts1.append(q_count.item())
+
 
         for i in range(18):
             if q_counts1[i] > q_counts0[i]:
@@ -2517,7 +1296,7 @@ def testing(config, dataset, data_loader, model, model1, model2, model3, model4,
 
         combined_score=torch.zeros(8, 75, 5).cuda()
         for i in range(18):
-            combined_score+=score_1[i]
+            combined_score += score_1[i]
 
         accs = []
         for i, row in enumerate(combined_score):
@@ -2525,7 +1304,9 @@ def testing(config, dataset, data_loader, model, model1, model2, model3, model4,
 
         acc_ci.extend(accs)
         acc = sum(accs) / len(accs)
-        print(acc)
+        logger.info(
+            f'Acc@1 {acc:.2f} \t'
+        )
 
         acc_meter.update(acc.item())
         batch_time.update(time.time() - end)
